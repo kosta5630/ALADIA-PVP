@@ -1,0 +1,56 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- FOV Settings
+local FOV_RADIUS = 100
+local AIM_AT_BODY_PART = "HumanoidRootPart" -- could also use Head
+local ENABLE_AIMBOT = true
+
+-- Drawing the FOV Circle
+local circle = Drawing.new("Circle")
+circle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+circle.Radius = FOV_RADIUS
+circle.Color = Color3.fromRGB(0, 255, 0)
+circle.Thickness = 1
+circle.Transparency = 0.4
+circle.Filled = false
+circle.Visible = true
+
+-- Function to get closest enemy to crosshair
+local function getClosestTarget()
+    local closestPlayer = nil
+    local shortestDistance = FOV_RADIUS
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(AIM_AT_BODY_PART) then
+            local part = player.Character[AIM_AT_BODY_PART]
+            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+            if onScreen then
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - circle.Position).Magnitude
+                if dist < shortestDistance then
+                    shortestDistance = dist
+                    closestPlayer = part
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+-- Aimbot Loop
+RunService.RenderStepped:Connect(function()
+    if ENABLE_AIMBOT then
+        local target = getClosestTarget()
+        if target then
+            -- AIM METHOD 1: Directly aim camera (works only in some games)
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+            
+            -- AIM METHOD 2 (optional): Use mousemoverel to simulate movement (executor only)
+            -- local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+            -- move mouse towards target
+        end
+    end
+end)
