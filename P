@@ -1,0 +1,72 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- FOV Settings
+local FOV_RADIUS = 100
+local AIM_AT_BODY_PART = "Head"
+local ENABLE_AIMBOT = true
+
+-- Drawing the FOV Circle
+local circle = Drawing.new("Circle")
+circle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+circle.Radius = FOV_RADIUS
+circle.Color = Color3.fromRGB(255, 0, 0)
+circle.Thickness = 1.5
+circle.Transparency = 0.5
+circle.Filled = false
+circle.Visible = true
+
+-- GUI Toggle Button
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "AimbotToggleGui"
+local button = Instance.new("TextButton", gui)
+button.Size = UDim2.new(0, 120, 0, 40)
+button.Position = UDim2.new(0, 10, 0, 10)
+button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Text = "Aimbot: ON"
+button.Font = Enum.Font.SourceSansBold
+button.TextSize = 18
+button.BorderSizePixel = 0
+
+-- Toggle function
+button.MouseButton1Click:Connect(function()
+	ENABLE_AIMBOT = not ENABLE_AIMBOT
+	button.Text = "Aimbot: " .. (ENABLE_AIMBOT and "ON" or "OFF")
+	button.BackgroundColor3 = ENABLE_AIMBOT and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(100, 0, 0)
+end)
+
+-- Get closest target
+local function getClosestTarget()
+	local closestPlayer = nil
+	local shortestDistance = FOV_RADIUS
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(AIM_AT_BODY_PART) then
+			local part = player.Character[AIM_AT_BODY_PART]
+			local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+			if onScreen then
+				local distance = (Vector2.new(screenPos.X, screenPos.Y) - circle.Position).Magnitude
+				if distance < shortestDistance then
+					shortestDistance = distance
+					closestPlayer = part
+				end
+			end
+		end
+	end
+
+	return closestPlayer
+end
+
+-- Aimbot logic
+RunService.RenderStepped:Connect(function()
+	if ENABLE_AIMBOT then
+		local target = getClosestTarget()
+		if target then
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+		end
+	end
+end)
